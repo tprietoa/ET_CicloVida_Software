@@ -1,0 +1,39 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    [cite_start]branches: [ develop ] # Se dispara al subir a develop [cite: 186]
+  pull_request:
+    [cite_start]branches: [ main ]    # Se dispara en Pull Requests a main [cite: 187]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v3
+
+      - name: Construir imagen Docker y ejecutar pruebas
+        # El Dockerfile que ya tienes se encarga de 'npm test' [cite: 181]
+        run: docker build -t mi-app-examen . 
+
+      - name: Análisis de Seguridad con Snyk
+        # Requerido para detectar vulnerabilidades [cite: 206]
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Análisis estático con SonarCloud
+        # Requerido para calidad de código en PR a main [cite: 191]
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Publicar en Docker Hub
+        # Solo si las pruebas y seguridad pasan [cite: 183]
+        if: github.event_name == 'push' && success()
+        run: |
+          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+          docker tag mi-app-examen ${{ secrets.DOCKER_HUB_USERNAME }}/mi-app-examen:latest
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/mi-app-examen:latest
