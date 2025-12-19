@@ -1,10 +1,11 @@
+
 name: CI/CD Pipeline
 
 on:
   push:
-    [cite_start]branches: [ develop ] # Se dispara al subir a develop [cite: 186]
+    branches: [ develop ]
   pull_request:
-    [cite_start]branches: [ main ]    # Se dispara en Pull Requests a main [cite: 187]
+    branches: [ main ]
 
 jobs:
   build-and-test:
